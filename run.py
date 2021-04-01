@@ -29,6 +29,7 @@ class Sms(Resource):
         self.parser.add_argument('text')
         self.parser.add_argument('number')
         self.parser.add_argument('smsc')
+        self.parser.add_argument('class')
         self.machine = sm
 
     @auth.login_required
@@ -45,6 +46,7 @@ class Sms(Resource):
         result = [machine.SendSMS({
           'Text': args.get("text"),
           'SMSC': {'Number': args.get("smsc")} if args.get("smsc") else {'Location': 1},
+          'Class': args.get("class") if args.get("class") else 1,
           'Number': number,
         }) for number in args.get("number").split(',')]
         return {"status": 200, "message": str(result)}, 200

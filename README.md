@@ -2,9 +2,11 @@
 
 Simple SMS REST API gateway for sending and receiving SMS from gammu supported devices. Gammu supports standard AT commands, which are using most of USB GSM modems.
 
-![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/pajikos/sms-gammu-gateway.svg)
-![Docker Automated build](https://img.shields.io/docker/automated/pajikos/sms-gammu-gateway.svg)
-![GitHub](https://img.shields.io/github/license/pajikos/sms-gammu-gateway.svg)
+Based on Pavel Sklenář ([pajikos](https://github.com/pajikos)) work (https://github.com/pajikos/sms-gammu-gateway).
+
+![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/simondecaestecker/sms-gammu-gateway.svg)
+![Docker Automated build](https://img.shields.io/docker/automated/simondecaestecker/sms-gammu-gateway.svg)
+![GitHub](https://img.shields.io/github/license/simondecaestecker/sms-gammu-gateway.svg)
 
 
 #### Available REST API endpoints:
@@ -27,7 +29,15 @@ Simple SMS REST API gateway for sending and receiving SMS from gammu supported d
   ```
   If you need to customize the smsc number:
   ```bash
-  curl -H 'Content-Type: application/json' -H "Authorization: Basic $AUTH" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx","smsc": "+33695000695"}' http://localhost:5000/sms
+  curl -H 'Content-Type: application/json' -H "Authorization: Basic $AUTH" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "smsc":"+33695000695"}' http://localhost:5000/sms
+  ```
+  If you need to customize the class (use 0 for Class 0/Flash SMS):
+  ```bash
+  curl -H 'Content-Type: application/json' -H "Authorization: Basic $AUTH" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "class":0}' http://localhost:5000/sms
+  ```
+  If you need to customize both the smsc number and the class:
+  ```bash
+  curl -H 'Content-Type: application/json' -H "Authorization: Basic $AUTH" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "smsc":"+33695000695", "class":0}' http://localhost:5000/sms
   ```
 - ##### Retrieve all the SMS stored on the modem/SIM Card :lock:
   ```
@@ -151,7 +161,7 @@ apt-get update && apt-get install -y pkg-config gammu libgammu-dev libffi-dev
 ```
 #### Clone repository
 ```
-git clone https://github.com/pajikos/sms-gammu-gateway
+git clone https://github.com/simondecaestecker/sms-gammu-gateway
 cd sms-gammu-gateway
 ```
 #### Install python dependencies
@@ -173,7 +183,7 @@ python run.py
 ## Running in Docker
 In a case of using any GSM supporting AT commands, you can simply run the container:
 ```
-docker run -d -p 5000:5000 --device=/dev/ttyUSB0:/dev/mobile pajikos/sms-gammu-gateway
+docker run -d -p 5000:5000 --device=/dev/ttyUSB0:/dev/mobile simondecaestecker/sms-gammu-gateway
 ```
 #### Docker compose:
 ```
@@ -182,7 +192,7 @@ services:
   sms-gammu-gateway:
     container_name: sms-gammu-gateway
     restart: always
-    image: pajikos/sms-gammu-gateway
+    image: simondecaestecker/sms-gammu-gateway
     environment:
       - PIN="1234"
     ports:
