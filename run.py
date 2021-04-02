@@ -5,7 +5,7 @@ from flask_httpauth import HTTPBasicAuth
 from flask_restful import reqparse, Api, Resource, abort
 
 from support import load_user_data, init_state_machine, retrieveAllSms, deleteSms
-from gammu import GSMNetworks
+from gammu import GSMNetworks, EncodeSMS
 
 pin = os.getenv('PIN', None)
 ssl = os.getenv('SSL', False)
@@ -43,12 +43,31 @@ class Sms(Resource):
         args = self.parser.parse_args()
         if args['text'] is None or args['number'] is None:
             abort(404, message="Parameters 'text' and 'number' are required.")
-        result = [machine.SendSMS({
-          'Text': args.get("text"),
-          'SMSC': {'Number': args.get("smsc")} if args.get("smsc") else {'Location': 1},
-          'Class': args.get("class") if args.get("class") else 1,
-          'Number': number,
-        }) for number in args.get("number").split(',')]
+        if len(args.get("text")) > 70:
+          smsinfo = {
+              "Class": -1,
+              "Unicode": True,
+              "Entries": [
+                {
+                  "ID": "ConcatenatedTextLong",
+                  "Buffer": args.get("text"),
+                }
+              ],
+          }
+          encoded = EncodeSMS(smsinfo)
+          for message in encoded:
+            for number in args.get("number").split(','):
+              message['SMSC'] = {'Number': args.get("smsc")} if args.get("smsc") else {'Location': 1}
+              message["Number"] = number
+              result = machine.SendSMS(message)
+        else:
+          result = [machine.SendSMS({
+            'Text': args.get("text"),
+            'SMSC': {'Number': args.get("smsc")} if args.get("smsc") else {'Location': 1},
+            'Class': args.get("class") if args.get("class") else 1,
+            'Number': number,
+            'Coding': 'Unicode_No_Compression',
+          }) for number in args.get("number").split(',')]
         return {"status": 200, "message": str(result)}, 200
 
 
