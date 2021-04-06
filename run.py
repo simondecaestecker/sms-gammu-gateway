@@ -7,8 +7,11 @@ from flask_restful import reqparse, Api, Resource, abort
 from support import load_user_data, init_state_machine, retrieveAllSms, deleteSms
 from gammu import GSMNetworks, EncodeSMS
 
+from datetime import datetime
+
 pin = os.getenv('PIN', None)
 ssl = os.getenv('SSL', False)
+save = os.getenv('SAVE', False)
 user_data = load_user_data()
 machine = init_state_machine(pin)
 app = Flask(__name__)
@@ -68,6 +71,15 @@ class Sms(Resource):
             'Number': number,
             'Coding': 'Unicode_No_Compression',
           }) for number in args.get("number").split(',')]
+        
+        # Save list of sent messages in a CSV file
+        if save:
+          fichier = open("/data/sent.csv", "a")
+          for number in args.get("number").split(','):
+            fichier.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ";" + number + ";\"" + args.get("text").replace("\n", "\\n").replace("\"", "\"\"") + "\";" + (args.get("smsc") if args.get("smsc") else "") + ";" + (args.get("class") if args.get("class") else "") + "\n")
+          fichier.close()
+        #####################################
+        
         return {"status": 200, "message": str(result)}, 200
 
 

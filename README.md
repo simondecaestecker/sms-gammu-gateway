@@ -214,6 +214,26 @@ Expected file paths (you can edit it in run.py or mount your own key/cert in Doc
 /ssl/key.pem
 /ssl/cert.pem
 ```
+#### How to save sent SMS in a CSV file?
+Using environment variable SAVE=True, all the sent SMS will be saved in the file `/data/sent.csv`
+Mount `/data` as a volume to keep history:
+```
+version: '3'
+services:
+  sms-gammu-gateway:
+    container_name: sms-gammu-gateway
+    restart: always
+    image: simondecaestecker/sms-gammu-gateway
+    environment:
+      - PIN="1234"
+	  - SAVE=True
+    ports:
+      - "5000:5000"
+    devices:
+      - /dev/ttyUSB1:/dev/mobile
+	volumes:
+	  - /path/you/want/on/your/system:/data
+```
 #### No more modem response ?
 If you have some regular problem with your modem and you don't want to disconnect and reconnect it physically to reset it, you can try to regularly use the reset function.
 (For example with my Huawei modem the reset function is used every 24 hours to maintain the stability of the system)

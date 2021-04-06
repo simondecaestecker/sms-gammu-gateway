@@ -23,4 +23,7 @@ COPY . $BASE_PATH
 COPY --from=dependencies /root/.cache /root/.cache
 RUN pip install -r requirements.txt && rm -rf /root/.cache
 
+RUN mkdir /data
+VOLUME /data
+
 CMD [ "python", "./run.py" ]
