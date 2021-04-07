@@ -1,7 +1,11 @@
 import sys
+import os
 
 import gammu
 
+from datetime import datetime
+
+save = os.getenv('SAVE', False)
 
 def load_user_data(filename='credentials.txt'):
     users = {}
@@ -66,6 +70,13 @@ def retrieveAllSms(machine):
             result["Text"] = text
 
         results.append(result)
+        
+        # Save list of received messages in a CSV file
+        if save and result["State"] == "UnRead" :
+          fichier = open("/data/received.csv", "a")
+          fichier.write(result["Date"] + ";" + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ";" + result["Number"] + ";\"" + (result["Text"].replace("\n", "\\n").replace("\"", "\"\"") if result["Text"] else "") + "\"\n")
+          fichier.close()
+        #####################################
 
     return results
 

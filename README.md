@@ -214,8 +214,8 @@ Expected file paths (you can edit it in run.py or mount your own key/cert in Doc
 /ssl/key.pem
 /ssl/cert.pem
 ```
-#### How to save sent SMS in a CSV file?
-Using environment variable SAVE=True, all the sent SMS will be saved in the file `/data/sent.csv`
+#### How to save sent and received SMS in a CSV file?
+Using environment variable SAVE=True, all the sent and received SMS will be saved in the files `/data/sent.csv` and `/data/received.csv`
 Mount `/data` as a volume to keep history:
 ```
 version: '3'
