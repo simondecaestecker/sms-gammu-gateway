@@ -264,6 +264,8 @@ notify:
     password: !secret sms_gateway_password
     target_param_name: number
     message_param_name: text
+    data_template:
+      class: '{{ data["class"] }}'
 ```
 
 #### Using in Automation
@@ -282,6 +284,15 @@ notify:
     data:
       message: 'alert, entry detected at garage door'
       target: '+xxxxxxxxxxxx'
+```
+If you need to customize the class (use 0 for Class 0/Flash SMS), you can call the service as follows:
+```yaml
+service: notify.sms_gw
+data:
+  message: 'alert, entry detected at garage door'
+  target: '+xxxxxxxxxxxx'
+  data:
+    class: 0
 ```
 
 #### Receiving SMS and sending notification
