@@ -4,6 +4,8 @@ from flask import Flask, request
 from flask_httpauth import HTTPBasicAuth
 from flask_restful import reqparse, Api, Resource, abort
 
+from waitress import serve
+
 from support import load_user_data, init_state_machine, retrieveAllSms, deleteSms
 from gammu import GSMNetworks, EncodeSMS
 
@@ -160,4 +162,4 @@ if __name__ == '__main__':
     if ssl:
         app.run(port='5000', host="0.0.0.0", ssl_context=('/ssl/cert.pem', '/ssl/key.pem'))
     else:
-        app.run(port='5000', host="0.0.0.0")
+        serve(app, host="0.0.0.0", port="5000", threads=1)
