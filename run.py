@@ -1,53 +1,47 @@
+#!/usr/bin/python3
+
 import os
 
 from flask import Flask, request
-from flask_httpauth import HTTPBasicAuth
 from flask_restful import reqparse, Api, Resource, abort
 
 from waitress import serve
 
-from support import load_user_data, init_state_machine, retrieveAllSms, deleteSms
 from gammu import GSMNetworks, EncodeSMS
 
 from datetime import datetime
 
-from functions import checkDB, addSMS
+from functions import checkDB, addSMS, init_state_machine, retrieveAllSms, deleteSms, createApikey, getApikey, getApikeys, parseApikeyJSON, getPermissions, setPermissions
 
 pin = os.getenv('PIN', None)
 ssl = os.getenv('SSL', False)
 save = os.getenv('SAVE', False)
-user_data = load_user_data()
+admin_password = os.getenv('ADMIN_PASSWORD', None)
 machine = init_state_machine(pin)
 app = Flask(__name__)
 api = Api(app)
-auth = HTTPBasicAuth()
-
-
-@auth.verify_password
-def verify(username, password):
-    if not (username and password):
-        return False
-    return user_data.get(username) == password
 
 
 class Sms(Resource):
     def __init__(self, sm):
         self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-API-Key', location='headers', required='True')
         self.parser.add_argument('text')
         self.parser.add_argument('number')
         self.parser.add_argument('smsc')
         self.parser.add_argument('class')
         self.machine = sm
 
-    @auth.login_required
     def get(self):
         allSms = retrieveAllSms(machine)
         list([sms.pop("Locations") for sms in allSms])
         return allSms
 
-    @auth.login_required
     def post(self):
         args = self.parser.parse_args()
+        if getPermissions(args["X-API-Key"], "sms_post") == False:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
         if args['text'] is None or args['number'] is None:
             abort(404, message="Parameters 'text' and 'number' are required.")
         if len(args.get("text")) > 70:
@@ -87,26 +81,44 @@ class Sms(Resource):
 
 class Signal(Resource):
     def __init__(self, sm):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-API-Key', location='headers', required='True')
         self.machine = sm
 
     def get(self):
+        args = self.parser.parse_args()
+        if getPermissions(args["X-API-Key"], "signal") == False:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
         return machine.GetSignalQuality()
 
 
 class Reset(Resource):
     def __init__(self, sm):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-API-Key', location='headers', required='True')
         self.machine = sm
 
     def get(self):
+        args = self.parser.parse_args()
+        if getPermissions(args["X-API-Key"], "reset") == False:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
         machine.Reset(False)
         return {"status":200, "message": "Reset done"}, 200
 
 
 class Network(Resource):
     def __init__(self, sm):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-API-Key', location='headers', required='True')
         self.machine = sm
 
     def get(self):
+        args = self.parser.parse_args()
+        if getPermissions(args["X-API-Key"], "network") == False:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
         network = machine.GetNetworkInfo()
         network["NetworkName"] = GSMNetworks.get(network["NetworkCode"], 'Unknown')
         return network
@@ -114,10 +126,15 @@ class Network(Resource):
 
 class GetSms(Resource):
     def __init__(self, sm):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-API-Key', location='headers', required='True')
         self.machine = sm
 
-    @auth.login_required
     def get(self):
+        args = self.parser.parse_args()
+        if getPermissions(args["X-API-Key"], "sms_get") == False:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
         allSms = retrieveAllSms(machine)
         sms = {"Date": "", "Number": "", "State": "", "Text": ""}
         if len(allSms) > 0:
@@ -130,10 +147,15 @@ class GetSms(Resource):
 
 class SmsById(Resource):
     def __init__(self, sm):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-API-Key', location='headers', required='True')
         self.machine = sm
 
-    @auth.login_required
     def get(self, id):
+        args = self.parser.parse_args()
+        if getPermissions(args["X-API-Key"], "get_sms") == False:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
         allSms = retrieveAllSms(machine)
         self.abort_if_id_doesnt_exist(id, allSms)
         sms = allSms[id]
@@ -141,6 +163,10 @@ class SmsById(Resource):
         return sms
 
     def delete(self, id):
+        args = self.parser.parse_args()
+        if getPermissions(args["X-API-Key"], "get_sms") == False:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
         allSms = retrieveAllSms(machine)
         self.abort_if_id_doesnt_exist(id, allSms)
         deleteSms(machine, allSms[id])
@@ -150,16 +176,101 @@ class SmsById(Resource):
         if id < 0 or id >= len(allSms):
             abort(404, message = "Sms with id '{}' not found".format(id))
 
-checkDB()
-api.add_resource(Sms, '/sms', resource_class_args=[machine])
-api.add_resource(SmsById, '/sms/<int:id>', resource_class_args=[machine])
-api.add_resource(Signal, '/signal', resource_class_args=[machine])
-api.add_resource(Network, '/network', resource_class_args=[machine])
-api.add_resource(GetSms, '/getsms', resource_class_args=[machine])
-api.add_resource(Reset, '/reset', resource_class_args=[machine])
 
-if __name__ == '__main__':
-    if ssl:
-        app.run(port='5000', host="0.0.0.0", ssl_context=('/ssl/cert.pem', '/ssl/key.pem'))
-    else:
-        serve(app, host="0.0.0.0", port="5000", threads=1)
+class AdminApikeys(Resource):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-Admin-Password', location='headers', required='True')
+
+    def get(self):
+        args = self.parser.parse_args()
+        if args["X-Admin-Password"] != admin_password:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
+        data = getApikeys()
+        data_json = {}
+        if data is False:
+            return {"status": 200, "message": data_json}, 200
+
+        i = 0
+        for apikey in getApikeys():
+            data_json[i] = parseApikeyJSON(apikey)
+            i += 1
+
+        return {"status": 200, "message": data_json}, 200
+
+
+class AdminApikey(Resource):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-Admin-Password', location='headers', required='True')
+        self.parser.add_argument('description')
+
+    def post(self):
+        args = self.parser.parse_args()
+        if args["X-Admin-Password"] != admin_password:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
+        apikey = createApikey(args["description"])
+
+        if len(apikey) != 32:
+            return {"status": 500, "message": "Internal Server Error"}, 500
+
+        return {"status": 200, "message": "New API key created: " + apikey}, 200
+
+
+class AdminApikeyByApikey(Resource):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-Admin-Password', location='headers', required='True')
+        self.parser.add_argument('sms_post')
+        self.parser.add_argument('sms_get')
+        self.parser.add_argument('signal')
+        self.parser.add_argument('network')
+        self.parser.add_argument('reset')
+
+    def get(self, apikey):
+        args = self.parser.parse_args()
+        if args["X-Admin-Password"] != admin_password:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
+        return {"status": 200, "message": parseApikeyJSON(getApikey(apikey))}, 200
+
+    def post(self, apikey):
+        args = self.parser.parse_args()
+        if args["X-Admin-Password"] != admin_password:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
+        i = 0
+        for function in ["sms_post", "sms_get", "signal", "network", "reset"]:
+            if args[function] is not None:
+                if int(args[function]) in [0, 1] :
+                    if setPermissions(apikey, function, int(args[function])):
+                        i += 1
+
+        if i == 0:
+            return {"status": 200, "message": "No permissions update for API key " + apikey}, 200
+
+        return {"status": 200, "message": "Permissions updated for API key " + apikey}, 200
+
+
+if admin_password is None:
+    print(" * No admin password configured")
+else:
+    admin_password = str(admin_password)[1:-1]
+    checkDB()
+    api.add_resource(Sms, '/sms', resource_class_args=[machine])
+    api.add_resource(SmsById, '/sms/<int:id>', resource_class_args=[machine])
+    api.add_resource(Signal, '/signal', resource_class_args=[machine])
+    api.add_resource(Network, '/network', resource_class_args=[machine])
+    api.add_resource(GetSms, '/getsms', resource_class_args=[machine])
+    api.add_resource(Reset, '/reset', resource_class_args=[machine])
+    api.add_resource(AdminApikeys, '/admin/apikeys')
+    api.add_resource(AdminApikey, '/admin/apikey')
+    api.add_resource(AdminApikeyByApikey, '/admin/apikey/<apikey>')
+
+    if __name__ == '__main__':
+        if ssl:
+            app.run(port='5000', host="0.0.0.0", ssl_context=('/ssl/cert.pem', '/ssl/key.pem'))
+        else:
+            serve(app, host="0.0.0.0", port="5000", threads=1)
