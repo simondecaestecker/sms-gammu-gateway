@@ -86,19 +86,19 @@ Based on Pavel Sklenář ([pajikos](https://github.com/pajikos)) work (https://g
   }
   ```
 
-- ##### Get the current signal strength :unlock: 
+- ##### Get the current signal strength :unlock:
   ```
   GET http://xxx.xxx.xxx.xxx:5000/signal
   ```
   ```json
   {
-    "SignalStrength": -83, 
-    "SignalPercent": 45, 
+    "SignalStrength": -83,
+    "SignalPercent": 45,
     "BitErrorRate": -1
   }
   ```
 
-- ##### Get the current network details :unlock: 
+- ##### Get the current network details :unlock:
   ```
   GET http://xxx.xxx.xxx.xxx:5000/network
   ```
@@ -134,7 +134,7 @@ There are two options how to run this REST API SMS Gateway:
 * Running in Docker
 
 ## Prerequisites
-Either you are using Docker or standalone installation, your GSM modem must be visible in the system. 
+Either you are using Docker or standalone installation, your GSM modem must be visible in the system.
 When you put a USB stick to your system, you have to see a new USB device:
 ```
 dmesg | grep ttyUSB
@@ -168,7 +168,7 @@ cd sms-gammu-gateway
 ```
 pip install -r requirements.txt
 ```
-#### Edit gammu configuration 
+#### Edit gammu configuration
 You usually need to edit device property in file [gammu.config](https://wammu.eu/docs/manual/config/index.html) only, e.g.:
 ```
 [gammu]
@@ -177,8 +177,8 @@ connection = at
 ```
 #### Run application (it will start to listen on port 5000):
 ```
-python run.py
-``` 
+python3 run.py
+```
 
 ## Running in Docker
 In a case of using any GSM supporting AT commands, you can simply run the container:
@@ -214,8 +214,9 @@ Expected file paths (you can edit it in run.py or mount your own key/cert in Doc
 /ssl/key.pem
 /ssl/cert.pem
 ```
-#### How to save sent and received SMS in a CSV file?
-Using environment variable SAVE=True, all the sent and received SMS will be saved in the files `/data/sent.csv` and `/data/received.csv`
+#### How to save sent and received SMS in the SQLite 3 DB?
+Using environment variable SAVE=True, all the sent and received SMS will be saved in the SQLite 3 DB `/data/db.db`.
+On previous versions of the gateway, storage was done on 2 csv files (sent.csv and received.csv). If one (or both) of these files is still existing on the /data folder, SMS history will be moved to the SQLite 3 DB and the 2 csv files will be deleted.
 Mount `/data` as a volume to keep history:
 ```
 version: '3'

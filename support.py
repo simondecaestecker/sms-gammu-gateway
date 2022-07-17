@@ -5,6 +5,8 @@ import gammu
 
 from datetime import datetime
 
+from functions import addSMS
+
 save = os.getenv('SAVE', False)
 
 def load_user_data(filename='credentials.txt'):
@@ -70,12 +72,10 @@ def retrieveAllSms(machine):
             result["Text"] = text
 
         results.append(result)
-        
-        # Save list of received messages in a CSV file
+
+        # Save list of received messages in the SQLite 3 DB
         if save and result["State"] == "UnRead" :
-          fichier = open("/data/received.csv", "a")
-          fichier.write(result["Date"] + ";" + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ";" + result["Number"] + ";\"" + (result["Text"].replace("\n", "\\n").replace("\"", "\"\"") if result["Text"] else "") + "\"\n")
-          fichier.close()
+          addSMS("received", result["Date"], result["Number"], (result["Text"].replace("\n", "\\n").replace("\"", "\"\"") if result["Text"] else ""), "", "", "", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         #####################################
 
     return results

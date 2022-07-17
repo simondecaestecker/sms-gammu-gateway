@@ -11,6 +11,8 @@ from gammu import GSMNetworks, EncodeSMS
 
 from datetime import datetime
 
+from functions import checkDB, addSMS
+
 pin = os.getenv('PIN', None)
 ssl = os.getenv('SSL', False)
 save = os.getenv('SAVE', False)
@@ -73,15 +75,13 @@ class Sms(Resource):
             'Number': number,
             'Coding': 'Unicode_No_Compression',
           }) for number in args.get("number").split(',')]
-        
-        # Save list of sent messages in a CSV file
+
+        # Save list of sent messages in the SQLite 3 DB
         if save:
-          fichier = open("/data/sent.csv", "a")
           for number in args.get("number").split(','):
-            fichier.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ";" + number + ";\"" + args.get("text").replace("\n", "\\n").replace("\"", "\"\"") + "\";" + (args.get("smsc") if args.get("smsc") else "") + ";" + (args.get("class") if args.get("class") else "") + "\n")
-          fichier.close()
+            addSMS("sent", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), number, args.get("text").replace("\n", "\\n").replace("\"", "\"\""), "", (args.get("class") if args.get("class") else ""), (args.get("smsc") if args.get("smsc") else ""))
         #####################################
-        
+
         return {"status": 200, "message": str(result)}, 200
 
 
@@ -150,7 +150,7 @@ class SmsById(Resource):
         if id < 0 or id >= len(allSms):
             abort(404, message = "Sms with id '{}' not found".format(id))
 
-
+checkDB()
 api.add_resource(Sms, '/sms', resource_class_args=[machine])
 api.add_resource(SmsById, '/sms/<int:id>', resource_class_args=[machine])
 api.add_resource(Signal, '/signal', resource_class_args=[machine])
