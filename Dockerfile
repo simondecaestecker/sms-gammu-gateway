@@ -4,7 +4,7 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/latest-stable/community' >> /etc/
     && apk update \
     && apk add --no-cache pkgconfig gammu gammu-libs gammu-dev
 
-RUN python -m pip install -U pip
+RUN python3 -m pip install -U pip
 
 # Build dependencies in a dedicated stage
 FROM base AS dependencies
@@ -26,4 +26,4 @@ RUN pip install -r requirements.txt && rm -rf /root/.cache
 RUN mkdir /data
 VOLUME /data
 
-CMD [ "python", "./run.py" ]
+CMD [ "python3", "./run.py" ]

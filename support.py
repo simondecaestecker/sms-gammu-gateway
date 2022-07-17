@@ -82,4 +82,4 @@ def retrieveAllSms(machine):
 
 
 def deleteSms(machine, sms):
-    list(map(lambda location: machine.DeleteSMS(Folder=0, Location=location), sms["Locations"]))
+    list([machine.DeleteSMS(Folder=0, Location=location) for location in sms["Locations"]])

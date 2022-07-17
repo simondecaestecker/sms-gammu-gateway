@@ -40,7 +40,7 @@ class Sms(Resource):
     @auth.login_required
     def get(self):
         allSms = retrieveAllSms(machine)
-        list(map(lambda sms: sms.pop("Locations"), allSms))
+        list([sms.pop("Locations") for sms in allSms])
         return allSms
 
     @auth.login_required
