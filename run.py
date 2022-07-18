@@ -33,7 +33,7 @@ class Sms(Resource):
         self.machine = sm
 
     def get(self):
-        allSms = retrieveAllSms(machine)
+        allSms = retrieveAllSms(machine, args["X-API-Key"])
         list([sms.pop("Locations") for sms in allSms])
         return allSms
 
@@ -73,7 +73,7 @@ class Sms(Resource):
         # Save list of sent messages in the SQLite 3 DB
         if save:
           for number in args.get("number").split(','):
-            addSMS("sent", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), number, args.get("text").replace("\n", "\\n").replace("\"", "\"\""), "", (args.get("class") if args.get("class") else ""), (args.get("smsc") if args.get("smsc") else ""))
+            addSMS("sent", datetime.now().strftime("%Y-%m-%d %H:%M:%S"), number, args.get("text").replace("\n", "\\n").replace("\"", "\"\""), args["X-API-Key"], (args.get("class") if args.get("class") else ""), (args.get("smsc") if args.get("smsc") else ""))
         #####################################
 
         return {"status": 200, "message": str(result)}, 200
@@ -135,7 +135,7 @@ class GetSms(Resource):
         if getPermissions(args["X-API-Key"], "sms_get") == False:
             return {"status": 403, "message": "Unauthorized"}, 403
 
-        allSms = retrieveAllSms(machine)
+        allSms = retrieveAllSms(machine, args["X-API-Key"])
         sms = {"Date": "", "Number": "", "State": "", "Text": ""}
         if len(allSms) > 0:
             sms = allSms[0]
@@ -156,7 +156,7 @@ class SmsById(Resource):
         if getPermissions(args["X-API-Key"], "get_sms") == False:
             return {"status": 403, "message": "Unauthorized"}, 403
 
-        allSms = retrieveAllSms(machine)
+        allSms = retrieveAllSms(machine, args["X-API-Key"])
         self.abort_if_id_doesnt_exist(id, allSms)
         sms = allSms[id]
         sms.pop("Locations")
@@ -167,7 +167,7 @@ class SmsById(Resource):
         if getPermissions(args["X-API-Key"], "get_sms") == False:
             return {"status": 403, "message": "Unauthorized"}, 403
 
-        allSms = retrieveAllSms(machine)
+        allSms = retrieveAllSms(machine, args["X-API-Key"])
         self.abort_if_id_doesnt_exist(id, allSms)
         deleteSms(machine, allSms[id])
         return '', 204
@@ -236,7 +236,7 @@ class AdminApikeyByApikey(Resource):
 
         return {"status": 200, "message": parseApikeyJSON(getApikey(apikey))}, 200
 
-    def post(self, apikey):
+    def put(self, apikey):
         args = self.parser.parse_args()
         if args["X-Admin-Password"] != admin_password:
             return {"status": 403, "message": "Unauthorized"}, 403

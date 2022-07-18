@@ -108,7 +108,7 @@ def init_state_machine(pin, filename='gammu.config'):
     return sm
 
 
-def retrieveAllSms(machine):
+def retrieveAllSms(machine, apikey=""):
     status = machine.GetSMSStatus()
     allMultiPartSmsCount = status['SIMUsed'] + status['PhoneUsed'] + status['TemplatesUsed']
 
@@ -151,7 +151,7 @@ def retrieveAllSms(machine):
 
         # Save list of received messages in the SQLite 3 DB
         if save and result["State"] == "UnRead" :
-          addSMS("received", result["Date"], result["Number"], (result["Text"].replace("\n", "\\n").replace("\"", "\"\"") if result["Text"] else ""), "", "", "", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+          addSMS("received", result["Date"], result["Number"], (result["Text"].replace("\n", "\\n").replace("\"", "\"\"") if result["Text"] else ""), apikey, "", "", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         #####################################
 
     return results
