@@ -153,7 +153,7 @@ class SmsById(Resource):
 
     def get(self, id):
         args = self.parser.parse_args()
-        if getPermissions(args["X-API-Key"], "get_sms") == False:
+        if getPermissions(args["X-API-Key"], "sms_get") == False:
             return {"status": 403, "message": "Unauthorized"}, 403
 
         allSms = retrieveAllSms(machine, args["X-API-Key"])
@@ -164,7 +164,7 @@ class SmsById(Resource):
 
     def delete(self, id):
         args = self.parser.parse_args()
-        if getPermissions(args["X-API-Key"], "get_sms") == False:
+        if getPermissions(args["X-API-Key"], "sms_get") == False:
             return {"status": 403, "message": "Unauthorized"}, 403
 
         allSms = retrieveAllSms(machine, args["X-API-Key"])
