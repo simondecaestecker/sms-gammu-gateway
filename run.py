@@ -26,10 +26,10 @@ class Sms(Resource):
     def __init__(self, sm):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('X-API-Key', location='headers', required='True')
-        self.parser.add_argument('text')
-        self.parser.add_argument('number')
-        self.parser.add_argument('smsc')
-        self.parser.add_argument('class')
+        self.parser.add_argument('text', location='json')
+        self.parser.add_argument('number', location='json')
+        self.parser.add_argument('smsc', location='json')
+        self.parser.add_argument('class', location='json')
         self.machine = sm
 
     def get(self):
@@ -204,7 +204,7 @@ class AdminApikey(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('X-Admin-Password', location='headers', required='True')
-        self.parser.add_argument('description')
+        self.parser.add_argument('description', location='json')
 
     def post(self):
         args = self.parser.parse_args()
@@ -223,11 +223,11 @@ class AdminApikeyByApikey(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('X-Admin-Password', location='headers', required='True')
-        self.parser.add_argument('sms_post')
-        self.parser.add_argument('sms_get')
-        self.parser.add_argument('signal')
-        self.parser.add_argument('network')
-        self.parser.add_argument('reset')
+        self.parser.add_argument('sms_post', location='json')
+        self.parser.add_argument('sms_get', location='json')
+        self.parser.add_argument('signal', location='json')
+        self.parser.add_argument('network', location='json')
+        self.parser.add_argument('reset', location='json')
 
     def get(self, apikey):
         args = self.parser.parse_args()
