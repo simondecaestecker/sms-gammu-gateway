@@ -26,18 +26,22 @@ class Sms(Resource):
     def __init__(self, sm):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('X-API-Key', location='headers', required='True')
-        self.parser.add_argument('text')
-        self.parser.add_argument('number')
-        self.parser.add_argument('smsc')
-        self.parser.add_argument('class')
         self.machine = sm
 
     def get(self):
+        args = self.parser.parse_args()
+        if getPermissions(args["X-API-Key"], "sms_get") == False:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
         allSms = retrieveAllSms(machine, args["X-API-Key"])
         list([sms.pop("Locations") for sms in allSms])
         return allSms
 
     def post(self):
+        self.parser.add_argument('text')
+        self.parser.add_argument('number')
+        self.parser.add_argument('smsc')
+        self.parser.add_argument('class')
         args = self.parser.parse_args()
         if getPermissions(args["X-API-Key"], "sms_post") == False:
             return {"status": 403, "message": "Unauthorized"}, 403
@@ -204,9 +208,9 @@ class AdminApikey(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('X-Admin-Password', location='headers', required='True')
-        self.parser.add_argument('description')
 
     def post(self):
+        self.parser.add_argument('description')
         args = self.parser.parse_args()
         if args["X-Admin-Password"] != admin_password:
             return {"status": 403, "message": "Unauthorized"}, 403
@@ -223,11 +227,6 @@ class AdminApikeyByApikey(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('X-Admin-Password', location='headers', required='True')
-        self.parser.add_argument('sms_post')
-        self.parser.add_argument('sms_get')
-        self.parser.add_argument('signal')
-        self.parser.add_argument('network')
-        self.parser.add_argument('reset')
 
     def get(self, apikey):
         args = self.parser.parse_args()
@@ -237,6 +236,11 @@ class AdminApikeyByApikey(Resource):
         return {"status": 200, "message": parseApikeyJSON(getApikey(apikey))}, 200
 
     def put(self, apikey):
+        self.parser.add_argument('sms_post')
+        self.parser.add_argument('sms_get')
+        self.parser.add_argument('signal')
+        self.parser.add_argument('network')
+        self.parser.add_argument('reset')
         args = self.parser.parse_args()
         if args["X-Admin-Password"] != admin_password:
             return {"status": 403, "message": "Unauthorized"}, 403
