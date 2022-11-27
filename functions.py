@@ -203,8 +203,8 @@ def getApikeys():
 
 
 def parseApikeyJSON(data=""):
-    if len(data) == 0:
-        False
+    if data is False or len(data) == 0:
+        return False
 
     data_json = {
         "apikey": data[1],
