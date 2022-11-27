@@ -15,7 +15,7 @@ Based on Pavel Sklenář ([pajikos](https://github.com/pajikos)) work (https://g
   ```
   POST http://xxx.xxx.xxx.xxx:5000/sms
   Content-Type: application/json
-  Authorization: Basic admin password
+  X-API-Key: REPLACE_WITH_THE_API_KEY
   {
     "text": "Hello, how are you?",
     "number": "+420xxxxxxxxx"
@@ -23,21 +23,20 @@ Based on Pavel Sklenář ([pajikos](https://github.com/pajikos)) work (https://g
   ```
   Example:
   ```bash
-  AUTH=$(echo -ne "admin:password" | base64 --wrap 0)
-  curl -H 'Content-Type: application/json' -H "Authorization: Basic $AUTH" -X POST --data '{"text":"Hello, how   are you?", "number":"+420xxxxxxxxx"}' http://localhost:5000/sms
+  curl -H 'Content-Type: application/json' -H "X-API-Key: REPLACE_WITH_THE_API_KEY" -X POST --data '{"text":"Hello, how   are you?", "number":"+420xxxxxxxxx"}' http://localhost:5000/sms
   1
   ```
   If you need to customize the smsc number:
   ```bash
-  curl -H 'Content-Type: application/json' -H "Authorization: Basic $AUTH" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "smsc":"+33695000695"}' http://localhost:5000/sms
+  curl -H 'Content-Type: application/json' -H "X-API-Key: REPLACE_WITH_THE_API_KEY" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "smsc":"+33695000695"}' http://localhost:5000/sms
   ```
   If you need to customize the class (use 0 for Class 0/Flash SMS):
   ```bash
-  curl -H 'Content-Type: application/json' -H "Authorization: Basic $AUTH" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "class":0}' http://localhost:5000/sms
+  curl -H 'Content-Type: application/json' -H "X-API-Key: REPLACE_WITH_THE_API_KEY" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "class":0}' http://localhost:5000/sms
   ```
   If you need to customize both the smsc number and the class:
   ```bash
-  curl -H 'Content-Type: application/json' -H "Authorization: Basic $AUTH" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "smsc":"+33695000695", "class":0}' http://localhost:5000/sms
+  curl -H 'Content-Type: application/json' -H "X-API-Key: REPLACE_WITH_THE_API_KEY" -X POST --data '{"text":"Hello, how are you?", "number":"+420xxxxxxxxx", "smsc":"+33695000695", "class":0}' http://localhost:5000/sms
   ```
 - ##### Retrieve all the SMS stored on the modem/SIM Card :lock:
   ```
@@ -125,7 +124,99 @@ Based on Pavel Sklenář ([pajikos](https://github.com/pajikos)) work (https://g
     "Status": 200,
     "Message": "Reset done"
   }
+  ```
 
+
+  #### Available REST API endpoints for administration:
+
+  - ##### List API keys :lock:
+    ```
+    GET http://xxx.xxx.xxx.xxx:5000/admin/apikeys
+    X-Admin-Password: REPLACE_WITH_ADMIN_PASSWORD
+    ```
+    ```json
+    {
+     "status":200,
+     "message":{
+        "0":{
+           "apikey":"************",
+           "description":"************",
+           "created":"1970-01-01 01:00:00",
+           "enabled":"1",
+           "permissions":{
+              "sms_post":"1",
+              "sms_get":"1",
+              "signal":"1",
+              "network":"1",
+              "reset":"0"
+           }
+        }
+     }
+  }
+    ```
+
+  - ##### Create an API key :lock:
+      ```
+    POST http://xxx.xxx.xxx.xxx:5000/admin/apikey
+    Content-Type: application/json
+    X-Admin-Password: REPLACE_WITH_ADMIN_PASSWORD
+    {
+      "description": "REPLACE_WITH_THE_DESCRIPTION"
+    }
+      ```
+    ```json
+    {
+     "status":200,
+     "message":"New API key created: ************"
+   }
+      ```
+
+  - ##### Get information of an API key :lock:
+      ```
+    GET http://xxx.xxx.xxx.xxx:5000/admin/apikey/REPLACE_WITH_THE_API_KEY
+    X-Admin-Password: REPLACE_WITH_ADMIN_PASSWORD
+
+      ```
+      ```json
+    {
+     "status":200,
+     "message":{
+        "0":{
+           "apikey":"************",
+           "description":"************",
+           "created":"1970-01-01 01:00:00",
+           "enabled":"1",
+           "permissions":{
+              "sms_post":"1",
+              "sms_get":"1",
+              "signal":"1",
+              "network":"1",
+              "reset":"0"
+           }
+        }
+     }
+  }
+      ```
+
+  - ##### Update an API key permissions :lock:
+      ```
+    PUT http://xxx.xxx.xxx.xxx:5000/admin/apikey/REPLACE_WITH_THE_API_KEY
+    Content-Type: application/json
+    X-Admin-Password: REPLACE_WITH_ADMIN_PASSWORD
+    {
+      "sms_post": 0 or 1,
+      "sms_get": 0 or 1,
+      "signal": 0 or 1,
+      "network": 0 or 1,
+      "reset": 0 or 1
+    }
+      ```
+    ```json
+    {
+     "status":200,
+     "message":"Permissions updated for API key ************"
+   }
+      ```
 
 # Usage
 
@@ -205,7 +296,9 @@ services:
 #### PIN configuration
 Pin to unblock SIM card could be set using environment variable PIN, e.g. PIN=1234.
 #### Authentication
-Out of the box, there is needed an HTTP Basic authentication to send any SMS, username and password can be configured in `credentials.txt`
+Authentication is provided with API keys.
+API keys can be managed through administration endpoints as described previously.
+
 #### How to use HTTPS?
 Using environment variable SSL=True, the program expects RSA private key and certificate to provide content via HTTPS.
 Expected file paths (you can edit it in run.py or mount your own key/cert in Docker):
@@ -304,8 +397,8 @@ sensor:
     resource: http://127.0.0.1:5000/getsms
     name: sms
     scan_interval: 20
-    username: !secret sms_gateway_username
-    password: !secret sms_gateway_password
+    headers:
+      X-API-Key: REPLACE_WITH_THE_API_KEY
     json_attributes:
       - Date
       - Number
