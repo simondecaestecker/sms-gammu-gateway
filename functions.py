@@ -255,3 +255,54 @@ def setPermissions(apikey="", function="", value=""):
     conn.close()
 
     return True
+
+
+def getHistory(type="", offset="0", limit="10", apikey="%"):
+    if type not in ["sent", "received"]:
+        return []
+
+    if (offset is not None and offset.isnumeric() == False) or (limit is not None and limit.isnumeric() == False):
+        return []
+
+    if offset is None:
+        offset = "0"
+    if limit is None:
+        limit = "10"
+
+    conn = sqlite3.connect("/data/db.db")
+    select = conn.execute("SELECT * FROM %s WHERE apikey LIKE '%s' ORDER BY id DESC LIMIT %s,%s" % (type, apikey, offset, limit));
+    data = select.fetchall()
+    conn.close()
+
+    return data
+
+
+def parseSentJSON(data=""):
+    if len(data) == 0:
+        False
+
+    data_json = {
+        "sent": data[1],
+        "number": data[2],
+        "text": data[3],
+        "smsc": data[4],
+        "class": data[5],
+        "apikey": data[6]
+    }
+
+    return data_json
+
+
+def parseReceivedJSON(data=""):
+    if len(data) == 0:
+        False
+
+    data_json = {
+        "received": data[1],
+        "read": data[2],
+        "number": data[3],
+        "text": data[4],
+        "apikey": data[5]
+    }
+
+    return data_json

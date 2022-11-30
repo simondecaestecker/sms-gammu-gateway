@@ -11,7 +11,7 @@ from gammu import GSMNetworks, EncodeSMS
 
 from datetime import datetime
 
-from functions import checkDB, addSMS, init_state_machine, retrieveAllSms, deleteSms, createApikey, getApikey, getApikeys, parseApikeyJSON, getPermissions, setPermissions
+from functions import checkDB, addSMS, init_state_machine, retrieveAllSms, deleteSms, createApikey, getApikey, getApikeys, parseApikeyJSON, getPermissions, setPermissions, getHistory, parseSentJSON, parseReceivedJSON
 
 pin = os.getenv('PIN', None)
 ssl = os.getenv('SSL', False)
@@ -258,6 +258,44 @@ class AdminApikeyByApikey(Resource):
         return {"status": 200, "message": "Permissions updated for API key " + apikey}, 200
 
 
+class AdminSent(Resource):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-Admin-Password', location='headers', required='True')
+
+    def get(self):
+        args = self.parser.parse_args()
+        if args["X-Admin-Password"] != admin_password:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
+        data = {}
+        i = 0
+        for sms in getHistory("sent", request.args.get("offset"), request.args.get("limit")):
+            data[i] = parseSentJSON(sms)
+            i += 1
+
+        return {"status": 200, "message": data}, 200
+
+
+class AdminReceived(Resource):
+    def __init__(self):
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument('X-Admin-Password', location='headers', required='True')
+
+    def get(self):
+        args = self.parser.parse_args()
+        if args["X-Admin-Password"] != admin_password:
+            return {"status": 403, "message": "Unauthorized"}, 403
+
+        data = {}
+        i = 0
+        for sms in getHistory("received", request.args.get("offset"), request.args.get("limit")):
+            data[i] = parseReceivedJSON(sms)
+            i += 1
+
+        return {"status": 200, "message": data}, 200
+
+
 if admin_password is None:
     print(" * No admin password configured")
 else:
@@ -272,6 +310,8 @@ else:
     api.add_resource(AdminApikeys, '/admin/apikeys')
     api.add_resource(AdminApikey, '/admin/apikey')
     api.add_resource(AdminApikeyByApikey, '/admin/apikey/<apikey>')
+    api.add_resource(AdminSent, '/admin/sent')
+    api.add_resource(AdminReceived, '/admin/received')
 
     if __name__ == '__main__':
         if ssl:

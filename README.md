@@ -217,6 +217,46 @@ Based on Pavel Sklenář ([pajikos](https://github.com/pajikos)) work (https://g
    }
       ```
 
+  - ##### Get sent SMS history :lock:
+      ```
+    GET http://xxx.xxx.xxx.xxx:5000/admin/sent
+      ```
+    ```json
+    {
+      "status": 200,
+      "message": {
+        "0": {
+          "sent": "1970-01-01 01:00:00",
+          "number": "************",
+          "text": "************",
+          "smsc": "",
+          "class": "",
+          "apikey": "************"
+        }
+      }
+    }
+      ```
+
+  - ##### Get received SMS history :lock:
+      ```
+    GET http://xxx.xxx.xxx.xxx:5000/admin/received
+      ```
+    ```json
+    {
+      "status": 200,
+      "message": {
+        "0": {
+          "sent": "1970-01-01 01:00:00",
+          "number": "************",
+          "text": "************",
+          "smsc": "",
+          "class": "",
+          "apikey": "************"
+        }
+      }
+    }
+      ```
+
 # Usage
 
 There are two options how to run this REST API SMS Gateway:
