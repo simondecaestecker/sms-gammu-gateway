@@ -9,7 +9,7 @@ RUN python3 -m pip install -U pip
 # Build dependencies in a dedicated stage
 FROM base AS dependencies
 COPY requirements.txt .
-RUN export CRYPTOGRAPHY_DONT_BUILD_RUST=1 \
+RUN export CRYPTOGRAPHY_DONT_BUILD_RUST=1 && export CARGO_NET_GIT_FETCH_WITH_CLI=1 \
     && apk add --no-cache --virtual .build-deps libffi-dev openssl-dev gcc musl-dev python3-dev cargo \
     && pip install -r requirements.txt
 
